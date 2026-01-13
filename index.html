@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -498,28 +499,13 @@
                                       placeholder="Optional notes on the assumptions used in this session."></textarea>
                         </div>
 
-                        <div class="form-group form-group-wide">
-                            <div class="button-row">
-                                <button type="button"
-                                        id="applySettingsBtn"
-                                        class="btn-primary"
-                                        data-legacy-id="adv-apply-settings"
-                                        data-toast-message="Settings applied for this session and results updated.">
-                                    Apply settings
-                                </button>
-                                <button type="button"
-                                        id="adv-reset-settings"
-                                        class="btn-secondary"
-                                        data-toast-message="Settings reset to default values for this session.">
-                                    Reset to default values
-                                </button>
-                            </div>
-                        </div>
+                        
+>
                     
                     <div class="form-divider"></div>
 
                     <div class="form-group form-group-wide">
-                        <h3>Capacity and costs</h3>
+                        <h3 class="capacity-costs-heading">Capacity and costs</h3>
                         <p class="help-text">
                             These inputs support feasibility checks and mentor support costing. If training sites are left blank, feasibility is assessed using mentors only.
                         </p>
@@ -595,7 +581,25 @@
                         <div class="help-text">Applied to epidemiological benefits in results and saved scenarios.</div>
                     </div>
 
-                </form>
+                
+<div class="form-group form-group-wide">
+                            <div class="button-row">
+                                <button type="button"
+                                        id="applySettingsBtn"
+                                        class="btn-primary"
+                                        data-legacy-id="adv-apply-settings"
+                                        data-toast-message="Settings applied for this session and results updated.">
+                                    Apply settings
+                                </button>
+                                <button type="button"
+                                        id="adv-reset-settings"
+                                        class="btn-secondary"
+                                        data-toast-message="Settings reset to default values for this session.">
+                                    Reset to default values
+                                </button>
+                            </div>
+                        </div
+</form>
                 </div>
 
                 <div id="settingsLogContainer">
@@ -1253,41 +1257,11 @@
 
 
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Export options</h2>
-                    <p>
-                        Use the brief export for a two-page meeting-ready summary. The standard export includes all saved scenarios.
-                    </p>
-                </div>
+            
 
-                <div class="top5-controls">
-                    <div class="form-group-inline" role="radiogroup" aria-label="Export mode">
-                        <label>
-                            <input type="radio" name="export-mode" id="export-mode-standard" value="standard" checked>
-                            Export: Standard PDF
-                        </label>
-                        <label>
-                            <input type="radio" name="export-mode" id="export-mode-brief" value="brief">
-                            Export: Brief (2 pages)
-                        </label>
-                    </div>
-                </div>
+<!-- Export options moved to Saved scenarios tab -->
 
-                <div class="form-grid">
-                    <div class="form-group form-group-wide">
-                        <label for="export-enablers">Enablers (brief export)</label>
-                        <textarea id="export-enablers" rows="3" placeholder="Example: Leverage NCDC stewardship; standardised curriculum and mentorship; phased expansion using hubs; incentives aligned with career pathways."></textarea>
-                        <div class="help-text">These bullets appear on page 2 of the brief PDF.</div>
-                    </div>
-
-                    <div class="form-group form-group-wide">
-                        <label for="export-risks">Risks (brief export)</label>
-                        <textarea id="export-risks" rows="3" placeholder="Example: Mentor availability constraints; uneven site readiness; delays in incentive payments; retention challenges; need for quality assurance as scale grows."></textarea>
-                        <div class="help-text">These bullets appear on page 2 of the brief PDF.</div>
-                    </div>
-                </div>
-            </div>
+>
 
         <div class="table-wrapper">
                     <table class="data-table" id="cost-components-table">
@@ -1802,10 +1776,10 @@
                 </div>
 
                 <div class="button-row">
-                    <button type="button" id="copilot-copy-btn" class="btn-primary">Copy prompt for Copilot</button>
-                    <button type="button" id="chatgpt-copy-btn" class="btn-secondary">Copy prompt for ChatGPT</button>
-                    <button type="button" id="briefing-download-btn" class="btn-secondary">Download prompts</button>
-                    <button type="button" id="copilot-open-and-copy-btn" class="btn-secondary">Open Copilot and copy (optional)</button>
+                    <button type="button" id="copilot-copy-btn" class="btn-primary" data-toast-message="Copilot prompt copied to clipboard.">Copy prompt for Copilot</button>
+                    <button type="button" id="chatgpt-copy-btn" class="btn-secondary" data-toast-message="ChatGPT prompt copied to clipboard.">Copy prompt for ChatGPT</button>
+                    <button type="button" id="briefing-download-btn" class="btn-secondary" data-toast-message="Prompts downloaded as a text file.">Download prompts</button>
+                    <button type="button" id="copilot-open-and-copy-btn" class="btn-secondary" data-toast-message="Opened Copilot and copied the prompt.">Open Copilot and copy (optional)</button>
                 </div>
 
                 <div id="copilot-howto-info" class="callout callout-info">
@@ -1975,7 +1949,58 @@ The Copilot interpretation text shown here is based on the most recent configura
                     </table>
                 </div>
                 <p id="top5-empty" class="hint hidden">Save at least one scenario to see the top options list.</p>
-            </div>
+            </div
+
+<div class="card">
+                <div class="card-header">
+                    <h2>Export options</h2>
+                    <p>
+                        Use the brief export for a two-page meeting-ready summary. The standard export includes all saved scenarios.
+                    </p>
+                </div>
+
+                <div class="top5-controls">
+                    <div class="form-group-inline" role="radiogroup" aria-label="Export mode">
+                        <label>
+                            <input type="radio" name="export-mode" id="export-mode-standard" value="standard" checked>
+                            Export: Standard PDF
+                        </label>
+                        <label>
+                            <input type="radio" name="export-mode" id="export-mode-brief" value="brief">
+                            Export: Brief (2 pages)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group form-group-wide">
+                        <label for="export-enablers">Enablers (brief export)</label>
+                        <textarea id="export-enablers" rows="3" placeholder="Example: Leverage NCDC stewardship; standardised curriculum and mentorship; phased expansion using hubs; incentives aligned with career pathways."></textarea>
+                        <div class="help-text">These bullets appear on page 2 of the brief PDF.</div>
+                    </div>
+
+                    <div class="form-group form-group-wide">
+                        <label for="export-risks">Risks (brief export)</label>
+                        <textarea id="export-risks" rows="3" placeholder="Example: Mentor availability constraints; uneven site readiness; delays in incentive payments; retention challenges; need for quality assurance as scale grows."></textarea
+                        <div class="form-group form-group-wide">
+                            <div class="preview-grid">
+                                <div class="preview-box">
+                                    <div class="preview-title">Enablers preview</div>
+                                    <div id="brief-enablers-preview" class="preview-content"></div>
+                                </div>
+                                <div class="preview-box">
+                                    <div class="preview-title">Risks preview</div>
+                                    <div id="brief-risks-preview" class="preview-content"></div>
+                                </div>
+                            </div>
+                        </div>
+>
+                        <div class="help-text">These bullets appear on page 2 of the brief PDF.</div>
+                    </div>
+                </div>
+            </div
+
+>
 
 
             <div class="button-row">
@@ -2020,6 +2045,7 @@ The Copilot interpretation text shown here is based on the most recent configura
                             <th>Actions</th>
                         </tr>
                     </thead>
+                    <tbody></tbody>
                     <tbody>
                     <!-- Filled dynamically -->
                     </tbody>

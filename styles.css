@@ -1,6 +1,6 @@
 
 /* ===========================
-   Base layouttt and typoghgraphyy
+   Base layout and typoghgraphy
    =========================== */
 
 :root {
@@ -3107,4 +3107,54 @@ button.mini:hover {
 }
 @media (max-width: 900px){
   .top5-actions{width:100%; justify-content:flex-start; margin-left:0;}
+}
+
+
+/* Emphasis heading for Capacity and costs */
+.capacity-costs-heading{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 10px;
+  border-radius:12px;
+  background: rgba(245, 158, 11, 0.14); /* amber tint */
+  color: #92400E;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  margin-bottom: 8px;
+}
+
+/* Brief export preview boxes */
+.preview-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+}
+@media (max-width: 900px){
+  .preview-grid{ grid-template-columns: 1fr; }
+}
+.preview-box{
+  border:1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-panel);
+  padding:10px 12px;
+}
+.preview-title{
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.preview-content{
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--color-text);
+}
+.preview-content ul{
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+.preview-content li{
+  margin: 4px 0;
 }

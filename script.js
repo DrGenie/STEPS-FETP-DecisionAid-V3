@@ -1,8 +1,10 @@
+
 /* ===================================================
    STEPS FETP India Decision Aid tool
    Next generation script with working tooltips,
-   WTP based benefits, sensitivity, Copilot  and
+   Perceived programme value based benefits, sensitivity, Copilot integration and exports
    =================================================== */
+
 /* ===========================
    Global model coefficients
    =========================== */
@@ -323,9 +325,9 @@ Object.assign(TOOLTIP_LIBRARY, {
       "Indicative willingness to pay per trainee per month implied by the preference model. Calculated as non cost utility for the configured option divided by the absolute value of the cost coefficient, scaled to rupees. Higher values indicate higher implied value placed on the package by respondents in the preference study."
   },
   result_wtp_total_cohort: {
-    title: "Total WTP per cohort",
+    title: "Total Perceived programme value per cohort",
     body:
-      "Indicative total willingness to pay for one cohort. Calculated as WTP per trainee per month multiplied by programme duration in months for the selected tier and the number of trainees per cohort. This is not a budget, it is an implied value measure from stated preferences."
+      "Indicative total willingness to pay for one cohort. Calculated as Perceived programme value per trainee per month multiplied by programme duration in months for the selected tier and the number of trainees per cohort. This is not a budget, it is an implied value measure from stated preferences."
   },
   result_programme_cost_cohort: {
     title: "Programme cost per cohort",
@@ -386,7 +388,7 @@ Object.assign(TOOLTIP_LIBRARY, {
   national_total_wtp: {
     title: "Total WTP",
     body:
-      "Total indicative willingness to pay aggregated across all configured cohorts. Calculated as total WTP per cohort multiplied by the number of cohorts. This is an implied value measure from the preference model, not a financial budget."
+      "Total indicative willingness to pay aggregated across all configured cohorts. Calculated as total Perceived programme value per cohort multiplied by the number of cohorts. This is an implied value measure from the preference model, not a financial budget."
   },
   national_graduates: {
     title: "Total graduates",
@@ -721,6 +723,7 @@ function enforceResponseTimeFixedTo7Days() {
    =========================== */
 
 function showToast(message, type = "info") {
+  try { appState._toastJustShownAt = Date.now(); appState._toastJustShownMsg = String(message || ""); } catch(e) {}
   const container = document.getElementById("toastContainer");
   if (!container) {
     return;
@@ -972,7 +975,7 @@ function initDefinitionTooltips() {
   if (wtpInfo) {
     wtpInfo.classList.add("tooltip-trigger");
     if (!wtpInfo.getAttribute("data-tooltip-key")) {
-      wtpInfo.setAttribute("data-tooltip", "WTP per trainee per month is derived from the preference model by dividing attribute coefficients by the cost coefficient. It is an approximate rupee value stakeholders attach to this configuration. Total WTP aggregates this value across trainees and cohorts. All benefit values are indicative approximations.");
+      wtpInfo.setAttribute("data-tooltip", "WTP per trainee per month is derived from the preference model by dividing attribute coefficients by the cost coefficient. It is an approximate rupee value stakeholders attach to this configuration. Total Perceived programme value aggregates this value across trainees and cohorts. All benefit values are indicative approximations.");
     }
     wtpInfo.removeAttribute("title");
   }
@@ -995,7 +998,7 @@ function initDefinitionTooltips() {
     if (!mxlInfo.getAttribute("data-tooltip-key")) {
       mxlInfo.setAttribute(
         "data-tooltip",
-        "The mixed logit preference model allows preferences to vary across decision makers instead of assuming a single average pattern, which makes endorsement and WTP estimates more flexible."
+        "The mixed logit preference model allows preferences to vary across decision makers instead of assuming a single average pattern, which makes endorsement and Perceived programme value estimates more flexible."
       );
     }
     mxlInfo.removeAttribute("title");
@@ -1031,7 +1034,7 @@ function initDefinitionTooltips() {
     if (!sensInfo.getAttribute("data-tooltip-key")) {
       sensInfo.setAttribute(
         "data-tooltip",
-        "In this summary, the cost column shows the economic cost for each scenario over the selected time horizon. Total economic cost and net benefit are aggregated across all cohorts in millions of rupees. Total WTP benefits summarise how much value stakeholders place on each configuration, while the outbreak response column isolates the part of that value linked to faster detection and response. Epidemiological outbreak benefits appear when the outbreak benefit switch is on and the epidemiological module is active. The effective WTP benefit scales total WTP by the endorsement rate used in the calculation. Benefit cost ratios compare total benefits with total costs, and net present values show the difference between benefits and costs in rupee terms. Values above one for benefit cost ratios and positive net present values indicate that estimated benefits exceed costs under the current assumptions."
+        "In this summary, the cost column shows the economic cost for each scenario over the selected time horizon. Total economic cost and net benefit are aggregated across all cohorts in millions of rupees. Total Perceived programme value benefits summarise how much value stakeholders place on each configuration, while the outbreak response column isolates the part of that value linked to faster detection and response. Epidemiological outbreak benefits appear when the outbreak benefit switch is on and the epidemiological module is active. The effective Perceived programme value benefit scales total Perceived programme value by the endorsement rate used in the calculation. Benefit cost ratios compare total benefits with total costs, and net present values show the difference between benefits and costs in rupee terms. Values above one for benefit cost ratios and positive net present values indicate that estimated benefits exceed costs under the current assumptions."
       );
     }
     sensInfo.removeAttribute("title");
@@ -2110,6 +2113,19 @@ function applySettingsValuesToState(values) {
     }
   });
 
+  // Track capacity and costs inputs for logging and exports
+  const cc = appState.settings.capacityCosts || {};
+  Object.keys(values).forEach((k) => {
+    const lower = String(k).toLowerCase();
+    const num = Number(values[k]);
+    if (lower.includes("mentor-support") && lower.includes("cost") && isFinite(num) && num >= 0) cc.mentorSupportCostPerCohortBase = num;
+    if (lower.includes("available") && lower.includes("mentor") && isFinite(num) && num >= 0) cc.availableMentorsNational = num;
+    if (lower.includes("training") && lower.includes("site") && lower.includes("available") && isFinite(num) && num >= 0) cc.availableTrainingSites = num;
+    if (lower.includes("max") && lower.includes("cohorts") && lower.includes("site") && isFinite(num) && num >= 0) cc.maxCohortsPerSitePerYear = num;
+    if (lower.includes("cross") && lower.includes("multiplier") && isFinite(num) && num > 0) cc.crossSectorBenefitMultiplier = num;
+  });
+  appState.settings.capacityCosts = cc;
+
   appState.settings.lastAppliedValues = values;
 
   syncOutbreakValueDropdownsFromState();
@@ -2126,6 +2142,12 @@ function buildHumanReadableSettingsSummary() {
   parts.push(`Value per outbreak ₹${formatNumber(t.valuePerOutbreak, 0)}`);
   parts.push(`Completion rate ${formatNumber(t.completionRate * 100, 1)} percent`);
   parts.push(`Outbreaks per graduate per year ${formatNumber(t.outbreaksPerGraduatePerYear, 2)}`);
+  const cc = appState.settings.capacityCosts || {};
+  if (cc.crossSectorBenefitMultiplier !== undefined) parts.push(`Cross-sector benefit multiplier ${formatNumber(cc.crossSectorBenefitMultiplier, 2)}`);
+  if (cc.mentorSupportCostPerCohortBase !== undefined) parts.push(`Mentor support cost base ₹${formatNumber(cc.mentorSupportCostPerCohortBase, 0)} per cohort`);
+  if (cc.availableMentorsNational !== undefined) parts.push(`Available mentors ${formatNumber(cc.availableMentorsNational, 0)} nationally`);
+  if (cc.availableTrainingSites) parts.push(`Available training sites ${formatNumber(cc.availableTrainingSites, 0)}`);
+  if (cc.maxCohortsPerSitePerYear) parts.push(`Max cohorts per site/year ${formatNumber(cc.maxCohortsPerSitePerYear, 0)}`);
   return parts.join("; ");
 }
 
@@ -2162,6 +2184,7 @@ function initApplySettingsButton() {
   btn.addEventListener("click", () => {
     const values = readSettingsFormValues();
     applySettingsValuesToState(values);
+    appendSettingsLogEntry(`Applied settings: ${buildHumanReadableSettingsSummary()}`);
 
     if (appState.currentScenario) {
       const c = { ...appState.currentScenario.config };
@@ -2252,7 +2275,7 @@ function updateConfigSummary(scenario) {
       statusText = "Promising configuration (needs discussion)";
     } else {
       statusClass = "status-poor";
-      statusText = "Challenging configuration (Less support and the WTP value is below the cost)";
+      statusText = "Challenging configuration (Less support and the Perceived programme value value is below the cost)";
     }
 
     statusTag.classList.add(statusClass);
@@ -2300,7 +2323,7 @@ function updateResultsTab(scenario) {
 
   // Capacity panel elements (defensive)
   const capMentorsPerCohortEl = document.getElementById("capacity-mentors-per-cohort");
-  const capTotalMentorsEl = document.getElementById("capacity-total-mentors");
+  const capTotalMentorsEl = getElByIdCandidates(["capacity-total-mentors-required","capacity-total-mentors"]);
   const capAvailableMentorsEl = document.getElementById("capacity-available-mentors");
   const capShortfallEl = document.getElementById("capacity-mentor-shortfall");
   const capStatusEl = document.getElementById("capacity-status");
@@ -2334,6 +2357,8 @@ function updateResultsTab(scenario) {
   if (scenario.capacity) {
     if (capMentorsPerCohortEl) capMentorsPerCohortEl.textContent = formatNumber(scenario.capacity.mentorsPerCohort, 0);
     if (capTotalMentorsEl) capTotalMentorsEl.textContent = formatNumber(scenario.capacity.totalMentorsRequired, 0);
+  const capTotalMentorsElAlt = document.getElementById("capacity-total-mentors-required");
+  if (capTotalMentorsElAlt && capTotalMentorsElAlt !== capTotalMentorsEl) capTotalMentorsElAlt.textContent = formatNumber(scenario.capacity.totalMentorsRequired, 0);
     if (capAvailableMentorsEl) capAvailableMentorsEl.textContent = formatNumber(scenario.capacity.availableMentors, 0);
     if (capShortfallEl) capShortfallEl.textContent = formatNumber(scenario.capacity.mentorShortfall, 0);
     if (capStatusEl) capStatusEl.textContent = scenario.capacity.status || "-";
@@ -3107,6 +3132,34 @@ function initPdfDoc(orientation = "portrait") {
   return doc;
 }
 
+function pdfSetFont(doc, style) {
+  // Standard, compact styles to avoid large spacing and inconsistent sizing.
+  switch (style) {
+    case "title":
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(17, 24, 39);
+      break;
+    case "subtitle":
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(31, 41, 55);
+      break;
+    case "small":
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(55, 65, 81);
+      break;
+    case "body":
+    default:
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(33, 37, 41);
+      break;
+  }
+}
+
+
 function addPdfPageNumbers(doc, margin = 36) {
   const n = doc.getNumberOfPages ? doc.getNumberOfPages() : 1;
   const pageW = doc.internal.pageSize.getWidth();
@@ -3231,6 +3284,42 @@ function pdfDrawTable(doc, opts) {
 
   return y;
 }
+
+function pdfDrawBullets(doc, opts) {
+  const x = opts.x;
+  let y = opts.y;
+  const width = opts.width;
+  const title = opts.title || "";
+  const items = Array.isArray(opts.items) ? opts.items : [];
+  const maxItems = opts.maxItems || items.length;
+
+  if (title) {
+    pdfSetFont(doc, "subtitle");
+    doc.text(title, x, y);
+    y += 12;
+  }
+
+  pdfSetFont(doc, "body");
+  const bulletIndent = 10;
+  const maxW = Math.max(40, width - bulletIndent);
+
+  const clipped = items.slice(0, maxItems);
+  if (!clipped.length) {
+    doc.text("• (none provided)", x, y);
+    y += 12;
+    return y;
+  }
+
+  clipped.forEach((it) => {
+    const lines = doc.splitTextToSize(String(it), maxW);
+    doc.text("•", x, y);
+    doc.text(lines, x + bulletIndent, y);
+    y += 12 + (lines.length - 1) * 8;
+  });
+
+  return y;
+}
+
 
 function exportScenariosToPdf() {
   const mode = getExportMode();
@@ -3529,117 +3618,131 @@ function exportTop5OnlyPdf() {
     return;
   }
 
-  const rankByEl = document.getElementById("top5-rank-by");
-  const feasibleOnlyEl = document.getElementById("top5-feasible-only");
-  const selectedOnlyEl = document.getElementById("top5-selected-only");
+  try {
+    const rankByEl = document.getElementById("top5-rank-by");
+    const feasibleOnlyEl = document.getElementById("top5-feasible-only");
+    const selectedOnlyEl = document.getElementById("top5-selected-only");
 
-  const metric = rankByEl ? rankByEl.value : "netBenefit";
-  const feasibleOnly = feasibleOnlyEl ? feasibleOnlyEl.checked : false;
-  const selectedOnly = selectedOnlyEl ? selectedOnlyEl.checked : false;
+    const metric = rankByEl ? rankByEl.value : "netBenefit";
+    const feasibleOnly = feasibleOnlyEl ? feasibleOnlyEl.checked : false;
+    const selectedOnly = selectedOnlyEl ? selectedOnlyEl.checked : false;
 
-  const items = computeTopScenarioItems(metric, feasibleOnly, selectedOnly, 5);
+    const items = computeTopScenarioItems(metric, feasibleOnly, selectedOnly, 5);
 
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const margin = 36;
-  let y = margin;
+    const page = doc.internal.pageSize;
+    const pageW = page.getWidth();
+    const pageH = page.getHeight();
+    const margin = 34;
 
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("STEPS: Top 5 scenario options", margin, y);
-  y += 14;
+    let y = margin;
+    pdfSetFont(doc, "title");
+    doc.text("Top 5 scenario options (decision-maker summary)", margin, y);
+    y += 18;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  const subtitle = `Ranked by: ${metric === "netBenefit" ? "Net benefit" : metric === "bcr" ? "BCR" : metric === "endorsement" ? "Endorsement" : "Balanced score"}`
-    + (feasibleOnly ? " | Feasible only" : "")
-    + (selectedOnly ? " | Shortlisted only" : "");
-  doc.text(subtitle, margin, y);
-  y += 12;
+    pdfSetFont(doc, "body");
+    const subtitle = selectedOnly ? "Ranking uses shortlisted scenarios only." : "Ranking uses all saved scenarios.";
+    doc.text(`${subtitle} Metric: ${metricLabel(metric)}.`, margin, y);
+    y += 14;
 
-  if (!items.length) {
-    doc.setFontSize(11);
-    doc.text("No saved scenarios available for this view.", margin, y);
-    addPdfPageNumbers(doc, margin);
-    doc.save("steps_top5_scenarios.pdf");
-    showToast("Top 5 PDF downloaded.", "success");
-    return;
-  }
+    if (!items.length) {
+      doc.text("No scenarios available for the selected filters. Save scenarios and try again.", margin, y);
+      addPdfPageNumbers(doc, margin);
+      doc.save("steps_top5_summary.pdf");
+      showToast("Top 5 PDF downloaded.", "success");
+      return;
+    }
 
-  // Build table rows
-  const headers = ["#", "Scenario", "Endorse.", "Eco cost", "Epi benefits", "Net benefit", "BCR", "Feasibility"];
-  const rows = items.map((it, idx) => {
-    const s = it.s;
-    const cap = it.cap;
-    return [
-      String(idx + 1),
-      getScenarioDisplayName(s),
-      formatPct(s.endorseRate),
-      formatCurrency(s.totalEconomicCostAllCohorts || 0),
-      formatCurrency(s.totalEpiBenefitsAllCohorts || 0),
-      formatCurrency(s.netBenefitAllCohorts || 0),
-      formatNumber(s.natBcr, 2),
-      cap.status === "Within current capacity" ? "Within capacity" : `Requires expansion (shortfall ${formatNumber(cap.mentorShortfall || 0, 0)})`
-    ];
-  });
+    const headers = ["#", "Scenario", "Endorse.", "Perceived value", "Eco cost", "Epi benefits", "Net benefit", "BCR", "Feasibility", "Mentor gap"];
+    const rows = items.map((it, idx) => {
+      const s = it.s;
+      const cap = it.cap || computeCapacity(s.config || {});
+      const feas = cap.status === "Within current capacity" ? "Within capacity" : "Requires expansion";
+      const gap = Number(cap.mentorShortfall || 0);
+      return [
+        String(idx + 1),
+        getScenarioDisplayName(s),
+        formatPct(s.endorseRate),
+        formatCurrency(s.wtpPerTraineePerMonth || 0),
+        formatCurrency(s.totalEconomicCostAllCohorts || 0),
+        formatCurrency(s.totalEpiBenefitsAllCohorts || 0),
+        formatCurrency(s.netBenefitAllCohorts || 0),
+        formatNumber(s.natBcr, 2),
+        feas,
+        gap > 0 ? String(formatNumber(gap, 0)) : "0"
+      ];
+    });
 
-  y = pdfDrawTable(doc, {
-    x: margin,
-    y,
-    width: pageW - 2 * margin,
-    headers,
-    rows,
-    colWidths: [20, 210, 55, 70, 75, 70, 45, 90],
-    fontSize: 9,
-    headerFontSize: 9,
-    cellPadding: 6,
-    zebra: true
-  });
+    y = pdfDrawTable(doc, {
+      x: margin,
+      y,
+      width: pageW - 2 * margin,
+      headers,
+      rows,
+      colWidths: [18, 168, 46, 54, 52, 54, 52, 30, 56, 40],
+      fontSize: 8.8,
+      headerFontSize: 8.8,
+      rowPaddingY: 4
+    });
 
-  // Page break safeguard
-  if (y > pageH - margin - 140) {
     doc.addPage();
     y = margin;
-  } else {
+
+    pdfSetFont(doc, "title");
+    doc.text("Implementation enablers and risks", margin, y);
+    y += 16;
+
+    pdfSetFont(doc, "body");
+    doc.text("These bullets can be edited on-screen before export.", margin, y);
+    y += 14;
+
+    const enablersText = (document.getElementById("export-enablers")?.value || "").trim();
+    const risksText = (document.getElementById("export-risks")?.value || "").trim();
+
+    y = pdfDrawBullets(doc, {
+      x: margin,
+      y,
+      width: pageW - 2 * margin,
+      title: "Enablers",
+      items: normaliseBulletText(enablersText),
+      maxItems: 12
+    });
+
     y += 10;
+
+    y = pdfDrawBullets(doc, {
+      x: margin,
+      y,
+      width: pageW - 2 * margin,
+      title: "Risks and mitigation priorities",
+      items: normaliseBulletText(risksText),
+      maxItems: 12
+    });
+
+    const totalGap = rows.reduce((acc, r) => acc + (Number(r[9]) || 0), 0);
+    pdfSetFont(doc, "body");
+    const feasLine =
+      totalGap > 0
+        ? `Feasibility summary: across the top 5, combined mentor gap = ${formatNumber(totalGap, 0)} (if gaps are additive).`
+        : "Feasibility summary: all top 5 scenarios are within current mentor capacity assumptions.";
+    const wrapped = doc.splitTextToSize(feasLine, pageW - 2 * margin);
+    const yLine = Math.min(y + 14, pageH - margin);
+    doc.text(wrapped, margin, yLine);
+
+    addPdfPageNumbers(doc, margin);
+    doc.save("steps_top5_summary.pdf");
+    showToast("Top 5 PDF downloaded.", "success");
+  } catch (e) {
+    console.error(e);
+    showToast("Top 5 PDF export failed. Please try again.", "error");
   }
-
-  // Assumptions + feasibility summary (compact)
-  const assumptions = buildAssumptionsBoxData();
-  const capInputs = {
-    availableMentorsNational: assumptions.availableMentorsNational,
-    availableTrainingSites: assumptions.availableTrainingSites,
-    maxCohortsPerSitePerYear: assumptions.maxCohortsPerSitePerYear
-  };
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("Assumptions and feasibility (summary)", margin, y);
-  y += 10;
-
-  const boxText = formatAssumptionsBoxText(assumptions, capInputs);
-  y = pdfDrawTextBox(doc, {
-    x: margin,
-    y,
-    width: pageW - 2 * margin,
-    text: boxText,
-    fontSize: 9,
-    padding: 10
-  });
-
-  addPdfPageNumbers(doc, margin);
-  doc.save("steps_top5_scenarios.pdf");
-  showToast("Top 5 PDF downloaded.", "success");
 }
 
 
 
 
 
-
 /* ===========================
-   WTP based benefits and sensitivity
+   Perceived programme value based benefits and sensitivity
    =========================== */
 
 function getSensitivityControls() {
@@ -4117,6 +4220,42 @@ function buildScenarioJsonForCopilot(scenario) {
 }
 
 
+
+function normaliseBulletText(text) {
+  const raw = (text || "").trim();
+  if (!raw) return [];
+  const parts = raw
+    .split(/\n|\r|;/g)
+    .map((p) => p.replace(/^[-•\s]+/g, "").trim())
+    .filter((p) => p.length > 0);
+  return parts;
+}
+
+function renderBulletPreview(containerId, text) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const items = normaliseBulletText(text);
+  if (!items.length) {
+    el.innerHTML = '<span class="hint">No items entered.</span>';
+    return;
+  }
+  const ul = document.createElement("ul");
+  items.slice(0, 12).forEach((it) => {
+    const li = document.createElement("li");
+    li.textContent = it;
+    ul.appendChild(li);
+  });
+  el.innerHTML = "";
+  el.appendChild(ul);
+}
+
+function updateBriefBulletsPreview() {
+  const enEl = document.getElementById("export-enablers");
+  const rkEl = document.getElementById("export-risks");
+  renderBulletPreview("brief-enablers-preview", enEl ? enEl.value : "");
+  renderBulletPreview("brief-risks-preview", rkEl ? rkEl.value : "");
+}
+
 function initCopilot() {
   const legacyBtn = document.getElementById("copilot-open-and-copy-btn");
 
@@ -4523,6 +4662,22 @@ function refreshAllOutputs(scenario) {
 }
 
 
+
+function initToastMessageBindings() {
+  // Generic toast messages for elements with data-toast-message.
+  // Avoid duplicates when a click handler already called showToast.
+  document.addEventListener("click", (ev) => {
+    const el = ev.target && ev.target.closest ? ev.target.closest("[data-toast-message]") : null;
+    if (!el) return;
+    const msg = el.getAttribute("data-toast-message");
+    if (!msg) return;
+    const now = Date.now();
+    const last = appState._toastJustShownAt || 0;
+    if (now - last < 180) return;
+    showToast(msg, "info");
+  }, true);
+}
+
 function initEventHandlers() {
   const costSlider = document.getElementById("cost-slider");
   if (costSlider) {
@@ -4581,12 +4736,23 @@ function initEventHandlers() {
   const saveScenarioBtn = document.getElementById("save-scenario");
   if (saveScenarioBtn) {
     saveScenarioBtn.addEventListener("click", () => {
-      if (!appState.currentScenario) {
-        showToast("Apply a configuration before saving a scenario.", "warning");
+      // Recompute from the current UI so auto-generated names and latest inputs are captured.
+      let computed = null;
+      try {
+        const freshConfig = getConfigFromUI();
+        computed = computeScenario(freshConfig);
+        appState.currentScenario = computed;
+        refreshAllOutputs(computed);
+      } catch (e) {
+        console.error(e);
+        showToast("Could not compute the scenario from the current configuration.", "error");
         return;
       }
-      appState.savedScenarios.push(cloneScenario(appState.currentScenario));
+
+      appState.savedScenarios.push(cloneScenario(computed));
       refreshSavedScenariosTable();
+      refreshTopScenariosPanel("top5");
+      refreshTopScenariosPanel("top5-copilot");
       refreshSensitivityTables();
       showToast("Scenario saved for comparison and export.", "success");
     });
@@ -4634,6 +4800,11 @@ function initEventHandlers() {
 
   const exportTop5PdfBtn = document.getElementById("export-top5-pdf");
   if (exportTop5PdfBtn) exportTop5PdfBtn.addEventListener("click", () => exportTop5OnlyPdf());
+  const enablersEl = document.getElementById("export-enablers");
+  const risksEl = document.getElementById("export-risks");
+  if (enablersEl) enablersEl.addEventListener("input", () => updateBriefBulletsPreview());
+  if (risksEl) risksEl.addEventListener("input", () => updateBriefBulletsPreview());
+
 
   // Copilot tab Top 5 snapshot controls
   const top5CopilotRankBy = document.getElementById("top5-copilot-rank-by");
@@ -4741,10 +4912,13 @@ document.addEventListener("DOMContentLoaded", () => {
   initGuidedTour();
   initAdvancedSettings();
   initCopilot();
+  initToastMessageBindings();
 
   // Initial Top 5 renders
   refreshTopScenariosPanel("top5");
   refreshTopScenariosPanel("top5-copilot");
+
+  updateBriefBulletsPreview();
 
   enforceResponseTimeFixedTo7Days();
   initOutbreakSensitivityDropdowns();

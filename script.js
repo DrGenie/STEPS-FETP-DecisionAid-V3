@@ -3,7 +3,6 @@
    Next generation script with working tooltips,
    WTP based benefits, sensitivity, Copilot  and
    =================================================== */
-
 /* ===========================
    Global model coefficients
    =========================== */
